@@ -1,0 +1,70 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.manifest
+*.spec
+
+# Virtual envs
+.venv
+venv/
+env/
+ENV/
+
+# Caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.cache
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+
+# Env / secrets
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# OS
+.DS_Store
+
+# Project
+logs/
+*.log
+
+# iCloud Drive duplicates
+* [0-9].py
+* [0-9].json
+* [0-9].md
+* [0-9].yml
+* [0-9].yaml
+* [0-9].toml
+* [0-9].txt
+
+# Claude
+.omc/
+.claude/settings.local.json
