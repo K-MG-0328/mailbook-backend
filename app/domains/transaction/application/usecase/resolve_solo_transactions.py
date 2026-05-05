@@ -6,7 +6,7 @@ card_notification 단독 → 정기결제 추정. merchant_receipt 단독 → �
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from app.domains.transaction.application.port.merchant_resolver_port import MerchantResolverPort
 from app.domains.transaction.application.port.payment_event_query_port import (
@@ -37,14 +37,19 @@ class ResolveSoloTransactions:
     merchant_resolver: MerchantResolverPort
     classifier: Classifier
 
-    async def execute(self, *, user_id: int | None, limit: int = 200) -> SoloSummary:
-        cutoff = now_in_app_tz() - timedelta(hours=SOLO_TIMEOUT_HOURS)
-        events = await self.payment_events.list_unmatched_older_than(
-            before=cutoff, user_id=user_id, limit=limit
-        )
+    async def execute(
+        self, *, user_id: int | None, limit: int = 200, force: bool = False
+    ) -> SoloSummary:
+        if force:
+            events = await self.payment_events.list_unmatched(user_id=user_id, limit=limit)
+        else:
+            cutoff = now_in_app_tz() - timedelta(hours=SOLO_TIMEOUT_HOURS)
+            events = await self.payment_events.list_unmatched_older_than(
+                before=cutoff, user_id=user_id, limit=limit
+            )
         summary = SoloSummary(subscription=0, non_card=0)
         for event in events:
-            txn = await self._create_solo(event=event, cutoff=cutoff, user_id=user_id)
+            txn = await self._create_solo(event=event, user_id=user_id)
             await self.payment_events.assign_transaction(
                 event_ids=[event.id], transaction_id=_require_id(txn)
             )
@@ -54,9 +59,7 @@ class ResolveSoloTransactions:
                 summary.non_card += 1
         return summary
 
-    async def _create_solo(
-        self, *, event: CandidateEventDto, cutoff: datetime, user_id: int | None
-    ) -> Transaction:
+    async def _create_solo(self, *, event: CandidateEventDto, user_id: int | None) -> Transaction:
         canonical = await self.merchant_resolver.resolve(
             raw_name=event.merchant_name, user_id=user_id
         )

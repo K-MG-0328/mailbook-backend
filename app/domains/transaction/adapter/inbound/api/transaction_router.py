@@ -123,6 +123,7 @@ async def match_endpoint(
 async def resolve_solo_endpoint(
     session: SessionDep,
     limit: Annotated[int, Query(ge=1, le=2000)] = 200,
+    force: Annotated[bool, Query(description="24h 타임아웃 우회 — 검증/관리자 전용")] = False,
 ) -> BaseResponse[SoloSummaryResponse]:
     settings = get_settings()
     usecase = ResolveSoloTransactions(
@@ -131,7 +132,7 @@ async def resolve_solo_endpoint(
         merchant_resolver=MerchantResolverAdapter(session),
         classifier=_build_classifier(),
     )
-    summary = await usecase.execute(user_id=settings.owner_user_id, limit=limit)
+    summary = await usecase.execute(user_id=settings.owner_user_id, limit=limit, force=force)
     await session.commit()
     return BaseResponse.ok(
         data=SoloSummaryResponse(subscription=summary.subscription, non_card=summary.non_card)
