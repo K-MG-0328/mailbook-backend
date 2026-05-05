@@ -386,6 +386,61 @@ curl -X POST http://localhost:8000/api/v1/merchants/seed
 
 ---
 
+## 다음 세션 시작 시 (2026-05-05 기준 미해결 이슈)
+
+본 세션에서 인프라 셋업 + OAuth + 1회차 sync 까지 완료 후 일시 중단. 다음 세션은 아래 결정부터 시작.
+
+### 현재 DB 상태
+- `emails` 테이블에 659개 메일 (모두 `parsed_status=pending`) — 1회차 sync 결과
+- `oauth_tokens` 에 `kmg0328.dev@gmail.com` 토큰 저장됨 (Fernet 암호화)
+- `transactions` / `payment_events` / `processing_runs` 모두 비어있음
+
+### 핵심 차단 요소
+사용자 Gmail 받은편지함에 **"Receipt from Trancy" 형태의 진짜 Trancy 영수증이 없음**. 있는 건:
+- Anthropic 영수증 2개 (`invoice+statements@mail.anthropic.com`, "Your receipt from Anthropic, PBC #...")
+- Stripe Trancy 결제실패 알림 3개 (영수증 아님 — 무시 대상)
+
+→ 현재 구성된 Trancy 파서로는 매칭 0건. 매칭 안 된 657+개가 LLM 폴백으로 흘러 Anthropic API 호출 폭주 → sync timeout.
+
+### 다음 세션 결정 — A/B/C 선택
+
+- **선택 A** (가장 빠른 정리): 펜딩 659개를 `parsed_status='skipped'` 로 일괄 마킹.
+  ```sql
+  UPDATE emails SET parsed_status='skipped',
+    parse_failure_reason='no matching parser; bulk skip for verification'
+  WHERE parsed_status='pending';
+  ```
+  → LLM 폭주 차단 + 다음 sync 부터 깨끗.
+
+- **선택 B** (실 거래 검증): Anthropic 영수증 파서 추가 (`PR 11`).
+  - `app/domains/payment_event/adapter/outbound/parsers/merchant/anthropic_parser.py`
+  - sender_patterns: `["invoice+statements@mail.anthropic.com"]`
+  - subject_patterns: `["Your receipt from Anthropic"]`
+  - Trancy 파서와 동일 구조, 정규식만 Anthropic 영수증 형식에 맞춤
+  - `provider.py` `DEFAULT_PARSERS` 에 추가, `merchants.yaml` 에 Anthropic 항목 + `parser_routes.yaml` 보강
+  - 단위 테스트 5개 (사용자가 fixture 제공 필요 — Gmail 에 있는 실 영수증 1개를 .eml 추출)
+
+- **선택 C**: A 먼저 후 B — 정리 + 새 파서 추가.
+
+권장: **A → B**. A 로 LLM 폭주 즉시 차단 후 B 로 실 거래 검증.
+
+### 본 세션의 코드 변경 (이미 커밋 + push)
+
+| 변경 | 파일 | 이유 |
+|---|---|---|
+| PKCE 비활성화 | `app/domains/email/adapter/outbound/external/google_oauth_flow.py` | google-auth-oauthlib 의 `autogenerate_code_verifier=True` 기본값 + 매 요청마다 새 Flow 인스턴스 → callback 단계에서 `code_verifier` 보존 안 돼 `Missing code verifier` 에러. confidential web client 라 PKCE 미사용으로 충분 |
+| Email upsert | `app/domains/email/adapter/outbound/persistence/email_repository.py` | 같은 message_id 재fetch 시 unique 제약 위반으로 sync 가 500 — `INSERT ... ON CONFLICT DO NOTHING` 으로 idempotent 화 |
+| Next.js rewrites | `Mailbook-frontend/next.config.ts` | `tailscale serve --set-path=/api` 가 prefix 를 strip 해서 backend `/api/v1/...` 와 안 맞음 → Next.js 가 `/api/:path*` 를 backend 로 내부 프록시. 결과적으로 `tailscale serve` 는 단일 `/` → 3000 만 설정 |
+
+### 현재 외부 환경 (재방문 시 동일)
+- Tailscale 호스트네임: `macbookpro.tailc8555f.ts.net`
+- Tailscale serve: `/` → `localhost:3000` (단일 룰)
+- Google OAuth Client redirect URIs: localhost + Tailscale 둘 다 등록
+- 백엔드 `.env` 에 OAuth credentials, Tailscale URL, ANTHROPIC_API_KEY 모두 채워짐
+- 프론트엔드 `.env.local` 에 `NEXT_PUBLIC_API_BASE_URL=https://macbookpro.tailc8555f.ts.net`
+
+---
+
 ## 위험 / 오픈 이슈
 
 - **`force=true` 는 검증/관리자 전용** — Phase 2 인증 도입 시 admin 전용으로 제한 검토. 운영 SyncPipeline 호출부는 여전히 24h 컷오프 사용

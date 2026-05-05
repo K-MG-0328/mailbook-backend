@@ -50,6 +50,10 @@ class GoogleOAuthFlow(OAuthFlowProviderPort):
         }
         flow = Flow.from_client_config(client_config, scopes=GMAIL_SCOPES, state=state)
         flow.redirect_uri = self._redirect_uri
+        # confidential web client (client_secret 보유) 라 PKCE 미사용. start/callback 사이
+        # code_verifier 보존이 필요해지는 걸 회피.
+        flow.autogenerate_code_verifier = False
+        flow.code_verifier = None
         return flow
 
     def build_authorization_url(self, *, state: str | None = None) -> OAuthAuthorizationRequest:

@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import desc, select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.email.application.port.email_repository_port import EmailRepositoryPort
@@ -18,11 +19,44 @@ class EmailRepository(EmailRepositoryPort):
         self._session = session
 
     async def save(self, email: Email) -> Email:
+        # INSERT ... ON CONFLICT DO NOTHING (uq_emails_source_account_msg).
+        # 동일 message_id 가 이미 있으면 새 row 안 넣고 기존 row 를 SELECT 해 반환.
         orm = to_orm(email)
-        self._session.add(orm)
-        await self._session.flush()
-        await self._session.refresh(orm)
-        return to_entity(orm)
+        values = {
+            "user_id": orm.user_id,
+            "source": orm.source,
+            "account": orm.account,
+            "message_id": orm.message_id,
+            "sender": orm.sender,
+            "subject": orm.subject,
+            "received_at": orm.received_at,
+            "body_text": orm.body_text,
+            "body_html": orm.body_html,
+            "labels": orm.labels,
+            "parsed_status": orm.parsed_status,
+            "parse_failure_reason": orm.parse_failure_reason,
+        }
+        stmt = (
+            pg_insert(EmailORM)
+            .values(**values)
+            .on_conflict_do_nothing(constraint="uq_emails_source_account_msg")
+            .returning(EmailORM.id)
+        )
+        result = await self._session.execute(stmt)
+        inserted_id = result.scalar_one_or_none()
+        if inserted_id is None:
+            existing = await self.find_by_message_id(
+                source=email.source, account=email.account, message_id=email.message_id
+            )
+            if existing is None:
+                raise RuntimeError(
+                    f"INSERT 충돌인데 SELECT 도 못 찾음: {email.source}/{email.account}/{email.message_id}"
+                )
+            return existing
+        loaded = await self._session.get(EmailORM, inserted_id)
+        if loaded is None:
+            raise RuntimeError(f"INSERT 직후 row 조회 실패: id={inserted_id}")
+        return to_entity(loaded)
 
     async def find_by_message_id(
         self, *, source: EmailSource, account: str, message_id: str
