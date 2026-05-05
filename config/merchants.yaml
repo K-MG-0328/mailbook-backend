@@ -1,0 +1,39 @@
+# PRD 8.2 — 가맹점 정규화 시드.
+# 각 항목: canonical / aliases / category(categories.yaml 의 값)
+# 추가 가맹점은 라우터의 POST /api/v1/merchants/aliases 또는 이 파일 + /seed 로 등록.
+
+merchants:
+  - canonical: 쿠팡
+    aliases:
+      - coupang
+      - "쿠팡(주)"
+      - "Coupang Pay"
+      - "쿠팡페이"
+    category: 쇼핑
+
+  - canonical: 스타벅스
+    aliases:
+      - "STARBUCKS"
+      - "스타벅스코리아"
+      - "스타벅스커피코리아"
+    category: 식비
+
+  - canonical: 배달의민족
+    aliases:
+      - "배민"
+      - "우아한형제들"
+      - "Woowa Brothers"
+    category: 식비
+
+  - canonical: 넷플릭스
+    aliases:
+      - "Netflix"
+      - "NETFLIX.COM"
+    category: 정기구독
+
+  - canonical: 카카오T
+    aliases:
+      - "kakao mobility"
+      - "카카오모빌리티"
+      - "카카오택시"
+    category: 교통
