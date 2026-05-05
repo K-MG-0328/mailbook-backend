@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     env: str = "local"
     debug: bool = False
 
+    # 서비스 포트 (uvicorn 바인딩)
+    port: int = 8002
+
     # PostgreSQL
     postgres_user: str
     postgres_password: str
@@ -27,7 +30,7 @@ class Settings(BaseSettings):
     session_ttl_seconds: int = 86400
 
     # CORS
-    cors_allowed_frontend_url: str = "http://localhost:3000"
+    cors_allowed_frontend_url: str = "http://localhost:3002"
 
     # Logging
     log_level: str = "INFO"
@@ -47,7 +50,7 @@ class Settings(BaseSettings):
     # Gmail OAuth (PRD 8.1)
     gmail_oauth_client_id: str = ""
     gmail_oauth_client_secret: str = ""
-    gmail_oauth_redirect_uri: str = "http://localhost:8000/api/v1/auth/gmail/callback"
+    gmail_oauth_redirect_uri: str = "http://localhost:8002/api/v1/auth/gmail/callback"
 
     # OAuth 토큰 암호화 (Fernet 키, 운영은 KMS/Secrets Manager 권장)
     # `python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`
