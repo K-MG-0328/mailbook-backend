@@ -5,6 +5,11 @@ from urllib.parse import quote_plus
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
 
+# 도메인 ORM 모듈을 metadata에 등록 (autogenerate 대상)
+import app.domains.email.infrastructure.orm.email_orm  # noqa: E402, F401
+import app.domains.merchant.infrastructure.orm.merchant_alias_orm  # noqa: E402, F401
+import app.domains.payment_event.infrastructure.orm.payment_event_orm  # noqa: E402, F401
+import app.domains.transaction.infrastructure.orm.transaction_orm  # noqa: E402, F401
 from alembic import context
 from app.infrastructure.config.settings import get_settings
 from app.infrastructure.database.database import Base
