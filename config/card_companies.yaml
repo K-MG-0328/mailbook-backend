@@ -1,0 +1,14 @@
+# PRD 8.3 — 카드사 매핑.
+# parser 값은 payment_event/adapter/outbound/parsers/card/ 의 파일명(=파서 식별자).
+# 실제 파서는 PR 5 에서 사용자 fixture 받은 후 추가.
+
+card_companies: []
+# 예시:
+# card_companies:
+#   - name: 신한카드
+#     sender_domains:
+#       - shinhancard.com
+#     subject_keywords:
+#       - "신한카드"
+#       - "결제 안내"
+#     parser: shinhan
