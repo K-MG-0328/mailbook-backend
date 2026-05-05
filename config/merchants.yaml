@@ -37,3 +37,10 @@ merchants:
       - "카카오모빌리티"
       - "카카오택시"
     category: 교통
+
+  - canonical: Trancy
+    aliases:
+      - "Trancy"
+      - "trancy"
+      - "trancy.org"
+    category: 정기구독

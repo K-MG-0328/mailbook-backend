@@ -1,0 +1,13 @@
+From: Newsletter <noreply@example.com>
+To: user@example.com
+Subject: Receipt from Trancy (Invoice #FD1NPWPX-0004)
+Date: Sat, 2 May 2026 10:14:00 +0900
+MIME-Version: 1.0
+Content-Type: text/html; charset="UTF-8"
+
+<html>
+<body>
+  <h1>Receipt from Trancy</h1>
+  <p><strong>Amount Paid:</strong> ₩4,800</p>
+</body>
+</html>

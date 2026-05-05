@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "parser_name": "trancy",
+  "event_type": "merchant_receipt",
+  "merchant_name": "Trancy",
+  "amount": 4800,
+  "paid_at": "2026-05-02T10:14:00+09:00",
+  "card_company": null,
+  "card_last4": null,
+  "confidence": 1.0,
+  "raw_data": {
+    "invoice_number": "FD1NPWPX-0004",
+    "receipt_number": "2840-3863",
+    "payment_method": "Naver Pay"
+  }
+}

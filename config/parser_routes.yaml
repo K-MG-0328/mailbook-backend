@@ -1,11 +1,9 @@
 # 파서 라우팅 보조 파일. 운영 가시성용.
 # 실제 매칭은 각 Parser.can_parse() 가 담당.
 
-routes: []
-# 예시:
-# routes:
-#   - parser: shinhan
-#     sender_patterns:
-#       - shinhancard.com
-#     subject_patterns:
-#       - 신한카드
+routes:
+  - parser: trancy
+    sender_patterns:
+      - "@trancy.org"
+    subject_patterns:
+      - "Receipt from Trancy"

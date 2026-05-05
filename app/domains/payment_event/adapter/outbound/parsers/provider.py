@@ -1,7 +1,10 @@
-"""정적 파서 인스턴스 풀. PR 5 에서 카드사/가맹점 파서가 추가되면 여기 등록."""
+"""정적 파서 인스턴스 풀. 새 가맹점 파서 추가 시 ``DEFAULT_PARSERS`` 에 등록."""
 
 from __future__ import annotations
 
+from app.domains.payment_event.adapter.outbound.parsers.merchant.trancy_parser import (
+    TrancyParser,
+)
 from app.domains.payment_event.application.port.parser_provider_port import ParserProviderPort
 from app.domains.payment_event.domain.service.parser import Parser
 
@@ -16,6 +19,5 @@ class StaticParserProvider(ParserProviderPort):
         return list(self._parsers)
 
 
-# PR 5 에서 카드사/가맹점 파서 import 후 이 리스트에 추가.
 # 등록 순서가 곧 매칭 우선순위 (parser_registry.select_parser).
-DEFAULT_PARSERS: list[Parser] = []
+DEFAULT_PARSERS: list[Parser] = [TrancyParser()]

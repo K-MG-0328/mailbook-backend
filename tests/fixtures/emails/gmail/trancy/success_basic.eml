@@ -1,0 +1,35 @@
+From: Trancy <support@trancy.org>
+To: user@example.com
+Subject: Receipt from Trancy (Invoice #FD1NPWPX-0004)
+Date: Sat, 2 May 2026 10:14:00 +0900
+MIME-Version: 1.0
+Content-Type: text/html; charset="UTF-8"
+
+<html>
+<body>
+  <h1>Receipt from Trancy</h1>
+  <p><strong>Amount Paid:</strong> ₩4,800</p>
+  <p><strong>Date Paid:</strong> May 2, 2026</p>
+  <hr>
+  <p><strong>Receipt Number:</strong> 2840-3863</p>
+  <p><strong>Invoice Number:</strong> FD1NPWPX-0004</p>
+  <p><strong>Payment Method:</strong> Naver Pay</p>
+  <hr>
+  <table border="1">
+    <tr>
+      <th>Description</th>
+      <th>Qty</th>
+      <th>Unit Price</th>
+      <th>Amount</th>
+    </tr>
+    <tr>
+      <td>Premium Monthly (May 2-Jun 2, 2026)</td>
+      <td>1</td>
+      <td>₩4,800</td>
+      <td>₩4,800</td>
+    </tr>
+  </table>
+  <p><strong>Total:</strong> ₩4,800</p>
+  <p>Questions? Contact <a href="mailto:support@trancy.org">support@trancy.org</a></p>
+</body>
+</html>
