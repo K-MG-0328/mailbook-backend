@@ -18,6 +18,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     String,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
@@ -33,6 +34,8 @@ class PaymentEventORM(Base):
         Index("ix_payment_events_amount_paid_at", "amount", "paid_at"),
         Index("ix_payment_events_transaction_id", "transaction_id"),
         Index("ix_payment_events_event_type", "event_type"),
+        # 같은 이메일이 두 번 파싱돼 PaymentEvent 가 중복 생성되지 않도록 DB 레벨 보호.
+        UniqueConstraint("email_id", name="uq_payment_events_email_id"),
     )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
@@ -50,8 +53,10 @@ class PaymentEventORM(Base):
 
     event_type: Mapped[str] = mapped_column(String(30), nullable=False)
     merchant_name: Mapped[str] = mapped_column(String(255), nullable=False)
-    # 원 단위 정수 (PRD 2.4 ParseResult.amount)
+    # KRW 는 원 단위, USD 는 cents 단위 정수.
     amount: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    # ISO 4217. amount 단위가 통화에 따라 다르므로 명시.
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
     paid_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     card_company: Mapped[str | None] = mapped_column(String(50), nullable=True)

@@ -133,6 +133,7 @@ class MatchUnmatchedEvents:
             merchant_name=merchant_event.merchant_name,
             canonical_merchant=canonical.canonical if canonical else None,
             amount=source.amount,
+            currency=source.currency,
             paid_at=source.paid_at,
             payment_method=PaymentMethod.CARD,
             category=category or None,
@@ -157,6 +158,7 @@ class MatchUnmatchedEvents:
             merchant_name=source.merchant_name,
             canonical_merchant=canonical.canonical if canonical else None,
             amount=source.amount,
+            currency=source.currency,
             paid_at=source.paid_at,
             payment_method=PaymentMethod.UNKNOWN,
             category=self.classifier.pick(alias_category=canonical.category if canonical else None)

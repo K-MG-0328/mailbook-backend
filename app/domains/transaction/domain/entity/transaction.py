@@ -14,6 +14,7 @@ class Transaction:
     amount: int
     paid_at: datetime
     payment_method: PaymentMethod = PaymentMethod.UNKNOWN
+    currency: str = "KRW"  # ISO 4217. amount 단위는 KRW=원, USD=cents.
     canonical_merchant: str | None = None
     category: str | None = None
     card_company: str | None = None

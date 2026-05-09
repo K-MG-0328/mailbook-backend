@@ -8,13 +8,15 @@ from email.policy import default as default_policy
 from email.utils import parseaddr, parsedate_to_datetime
 from pathlib import Path
 
-from app.domains.payment_event.adapter.outbound.parsers.merchant.trancy_parser import (
-    TrancyParser,
+from app.domains.payment_event.adapter.outbound.parsers.merchant.anthropic_parser import (
+    AnthropicParser,
 )
 from app.domains.payment_event.domain.value_object.event_type import EventType
 from app.infrastructure.external.timezone import to_app_tz
 
-FIXTURES_DIR = Path(__file__).resolve().parents[3] / "fixtures" / "emails" / "gmail" / "trancy"
+FIXTURES_DIR = (
+    Path(__file__).resolve().parents[3] / "fixtures" / "emails" / "gmail" / "anthropic"
+)
 
 
 @dataclass
@@ -61,14 +63,14 @@ def _load_eml(name: str) -> FakeEmail:
     )
 
 
-def test_can_parse_matches_trancy_email() -> None:
-    parser = TrancyParser()
+def test_can_parse_matches_anthropic_email() -> None:
+    parser = AnthropicParser()
     email = _load_eml("success_basic.eml")
     assert parser.can_parse(email) is True
 
 
 def test_parse_extracts_expected_fields() -> None:
-    parser = TrancyParser()
+    parser = AnthropicParser()
     email = _load_eml("success_basic.eml")
     expected = json.loads((FIXTURES_DIR / "success_basic.expected.json").read_text())
 
@@ -79,19 +81,36 @@ def test_parse_extracts_expected_fields() -> None:
     assert result.event_type == EventType.MERCHANT_RECEIPT
     assert result.merchant_name == expected["merchant_name"]
     assert result.amount == expected["amount"]
-    assert result.currency == "KRW"
+    assert result.currency == expected["currency"]
     assert result.card_company is None
     assert result.card_last4 is None
     assert result.confidence == expected["confidence"]
     assert result.paid_at is not None
     assert result.paid_at.isoformat() == expected["paid_at"]
+    assert "currency" not in result.raw_data
     assert result.raw_data["invoice_number"] == expected["raw_data"]["invoice_number"]
     assert result.raw_data["receipt_number"] == expected["raw_data"]["receipt_number"]
     assert result.raw_data["payment_method"] == expected["raw_data"]["payment_method"]
 
 
+def test_parse_extracts_card_last4_when_card_payment() -> None:
+    parser = AnthropicParser()
+    email = _load_eml("card_payment.eml")
+
+    result = parser.parse(email)
+
+    assert result.success is True
+    assert result.amount == 22000
+    assert result.currency == "USD"
+    assert result.card_last4 == "6043"
+    # 본문에 카드 brand 가 이미지로만 표기되어 plaintext 에는 남지 않음 → payment_method 비어있음
+    assert "payment_method" not in result.raw_data
+    # currency 는 정식 ParseResult.currency 필드로 승격됐으므로 raw_data 에는 더 이상 없음
+    assert "currency" not in result.raw_data
+
+
 def test_parse_fails_when_amount_missing() -> None:
-    parser = TrancyParser()
+    parser = AnthropicParser()
     email = _load_eml("missing_amount.eml")
 
     result = parser.parse(email)
@@ -102,12 +121,12 @@ def test_parse_fails_when_amount_missing() -> None:
 
 
 def test_can_parse_false_for_other_sender() -> None:
-    parser = TrancyParser()
+    parser = AnthropicParser()
     email = _load_eml("wrong_sender.eml")
     assert parser.can_parse(email) is False
 
 
 def test_can_parse_false_for_other_subject() -> None:
-    parser = TrancyParser()
+    parser = AnthropicParser()
     email = _load_eml("wrong_subject.eml")
     assert parser.can_parse(email) is False

@@ -1,0 +1,17 @@
+{
+  "success": true,
+  "parser_name": "anthropic",
+  "event_type": "merchant_receipt",
+  "merchant_name": "Anthropic",
+  "amount": 2200,
+  "currency": "USD",
+  "paid_at": "2026-05-03T09:30:29+09:00",
+  "card_company": null,
+  "card_last4": null,
+  "confidence": 1.0,
+  "raw_data": {
+    "invoice_number": "F0DTTX4X-0001",
+    "receipt_number": "2350-2602-9000",
+    "payment_method": "Link"
+  }
+}

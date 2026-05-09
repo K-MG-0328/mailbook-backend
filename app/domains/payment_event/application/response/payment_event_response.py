@@ -14,6 +14,7 @@ class PaymentEventResponse(BaseModel):
     event_type: str
     merchant_name: str
     amount: int
+    currency: str
     paid_at: datetime
     card_company: str | None
     card_last4: str | None
@@ -32,6 +33,7 @@ class PaymentEventResponse(BaseModel):
             event_type=str(event.event_type),
             merchant_name=event.merchant_name,
             amount=event.amount,
+            currency=event.currency,
             paid_at=event.paid_at,
             card_company=event.card_company,
             card_last4=event.card_last4,

@@ -1,36 +1,41 @@
-"""Trancy 영수증 파서.
+"""Anthropic 영수증 파서 (Stripe 발송).
 
-가맹점이 직접 보내는 결제 영수증 메일을 파싱한다.
-- 발신자: support@trancy.org
-- 제목: "Receipt from Trancy (Invoice #...)"
-- 본문: HTML 단독(text/html). body_text가 비어 html_to_text fallback 필요
-- 결제수단: Naver Pay 등 PG. card_company/card_last4 부재
+- 발신자: invoice+statements@mail.anthropic.com
+- 제목: "Your receipt from Anthropic, PBC #<receipt-no>"
+- 본문: text/plain + text/html. body_text 가 채워져 있어 fallback 불필요하지만
+  Trancy 와 동일하게 html_to_text fallback 도 둔다.
+- 통화: USD 단독. amount 는 cents 단위 정수로 저장하고 raw_data["currency"]="USD".
 """
 
 from __future__ import annotations
 
 import re
+from decimal import Decimal, InvalidOperation
 
 from app.domains.payment_event.adapter.outbound.external.html_text_extractor import html_to_text
 from app.domains.payment_event.domain.service.parser import EmailLike, Parser
 from app.domains.payment_event.domain.value_object.event_type import EventType
 from app.domains.payment_event.domain.value_object.parse_result import ParseResult
 
-PARSER_NAME = "trancy"
-MERCHANT_CANONICAL = "Trancy"
+PARSER_NAME = "anthropic"
+MERCHANT_CANONICAL = "Anthropic"
+CURRENCY = "USD"  # Stripe-issued Anthropic 영수증은 USD 단독.
 
-_AMOUNT_PATTERN = re.compile(r"₩\s*([\d,]+)")
-_INVOICE_PATTERN = re.compile(r"Invoice\s+Number[:\s]+([A-Za-z0-9-]+)", re.IGNORECASE)
-_RECEIPT_PATTERN = re.compile(r"Receipt\s+Number[:\s]+([\d-]+)", re.IGNORECASE)
+_AMOUNT_PATTERN = re.compile(r"Amount paid\s+\$([\d,]+\.\d{2})")
+_INVOICE_PATTERN = re.compile(r"Invoice number\s+([A-Z0-9-]+)")
+_RECEIPT_PATTERN = re.compile(r"Receipt number\s+([\d-]+)")
 _PAYMENT_METHOD_PATTERN = re.compile(
-    r"Payment\s+Method[:\s]+([A-Z][A-Za-z]*(?:\s+[A-Z][A-Za-z]*)?)"
+    r"Payment method[ \t]+([A-Z][A-Za-z]*(?:[ \t]+[A-Z][A-Za-z]*)?)"
 )
+# Stripe 영수증의 카드 결제 표기는 "Payment method <brand-image>? - 1234" 형태.
+# html_to_text 가 brand 이미지를 제거하고 남는 "- 1234" 패턴을 잡는다.
+_CARD_LAST4_PATTERN = re.compile(r"Payment method[^\r\n]*?-\s*(\d{4})")
 
 
-class TrancyParser(Parser):
+class AnthropicParser(Parser):
     name = PARSER_NAME
-    sender_patterns = ["@trancy.org"]
-    subject_patterns = ["Receipt from Trancy"]
+    sender_patterns = ["@mail.anthropic.com"]
+    subject_patterns = ["Your receipt from Anthropic"]
 
     def can_parse(self, email: EmailLike) -> bool:
         sender = email.sender.lower()
@@ -47,11 +52,12 @@ class TrancyParser(Parser):
         if not amount_match:
             return ParseResult.fail(parser_name=PARSER_NAME, reason="amount 추출 실패")
         try:
-            amount = int(amount_match.group(1).replace(",", ""))
-        except ValueError:
+            amount_cents = int(Decimal(amount_match.group(1).replace(",", "")) * 100)
+        except (InvalidOperation, ValueError):
             return ParseResult.fail(parser_name=PARSER_NAME, reason="amount 정수 변환 실패")
 
-        # Trancy 본문은 일자만(시간 없음) → Gmail connector가 KST aware로 채운 헤더 Date 사용
+        # Anthropic 본문의 "Paid May 3, 2026" 은 일자만이라 시간이 없음 →
+        # Gmail connector 가 KST aware 로 채운 헤더 Date 를 사용 (Trancy 와 동일).
         paid_at = email.received_at
         if paid_at is None:
             return ParseResult.fail(parser_name=PARSER_NAME, reason="paid_at(received_at) 누락")
@@ -64,16 +70,20 @@ class TrancyParser(Parser):
         if (m := _PAYMENT_METHOD_PATTERN.search(text)) is not None:
             raw_data["payment_method"] = m.group(1).strip()
 
+        card_last4: str | None = None
+        if (m := _CARD_LAST4_PATTERN.search(text)) is not None:
+            card_last4 = m.group(1)
+
         return ParseResult(
             success=True,
             parser_name=PARSER_NAME,
             event_type=EventType.MERCHANT_RECEIPT,
             merchant_name=MERCHANT_CANONICAL,
-            amount=amount,
-            currency="KRW",
+            amount=amount_cents,
+            currency=CURRENCY,
             paid_at=paid_at,
             card_company=None,
-            card_last4=None,
+            card_last4=card_last4,
             confidence=1.0,
             raw_data=raw_data,
         )

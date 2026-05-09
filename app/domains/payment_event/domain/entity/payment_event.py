@@ -19,6 +19,7 @@ class PaymentEvent:
     paid_at: datetime
     parser_name: str
     confidence: float
+    currency: str = "KRW"  # ISO 4217. amount 단위는 KRW=원, USD=cents.
     card_company: str | None = None
     card_last4: str | None = None
     raw_data: RawData = field(default_factory=dict)

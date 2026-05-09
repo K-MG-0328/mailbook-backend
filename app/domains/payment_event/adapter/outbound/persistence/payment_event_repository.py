@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 
 from sqlalchemy import desc, select, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.payment_event.application.port.payment_event_repository_port import (
@@ -10,7 +11,7 @@ from app.domains.payment_event.application.port.payment_event_repository_port im
 )
 from app.domains.payment_event.domain.entity.payment_event import PaymentEvent
 from app.domains.payment_event.domain.value_object.event_type import EventType
-from app.domains.payment_event.infrastructure.mapper.payment_event_mapper import to_entity, to_orm
+from app.domains.payment_event.infrastructure.mapper.payment_event_mapper import to_entity
 from app.domains.payment_event.infrastructure.orm.payment_event_orm import PaymentEventORM
 
 
@@ -19,11 +20,44 @@ class PaymentEventRepository(PaymentEventRepositoryPort):
         self._session = session
 
     async def save(self, event: PaymentEvent) -> PaymentEvent:
-        orm = to_orm(event)
-        self._session.add(orm)
-        await self._session.flush()
-        await self._session.refresh(orm)
-        return to_entity(orm)
+        # email_id unique 제약 (uq_payment_events_email_id) 위에서 ON CONFLICT DO NOTHING.
+        # 동일 email 의 중복 INSERT 를 DB 레벨에서 방지하고, 충돌 시 기존 row 를 반환한다.
+        values = {
+            "user_id": event.user_id,
+            "email_id": event.email_id,
+            "transaction_id": event.transaction_id,
+            "event_type": str(event.event_type),
+            "merchant_name": event.merchant_name,
+            "amount": event.amount,
+            "currency": event.currency,
+            "paid_at": event.paid_at,
+            "card_company": event.card_company,
+            "card_last4": event.card_last4,
+            "raw_data": event.raw_data,
+            "parser_name": event.parser_name,
+            "confidence": event.confidence,
+            "requires_manual_review": event.requires_manual_review,
+        }
+        stmt = (
+            pg_insert(PaymentEventORM)
+            .values(**values)
+            .on_conflict_do_nothing(index_elements=["email_id"])
+            .returning(PaymentEventORM.id)
+        )
+        result = await self._session.execute(stmt)
+        inserted_id = result.scalar_one_or_none()
+
+        if inserted_id is not None:
+            orm = await self._session.get(PaymentEventORM, inserted_id)
+            assert orm is not None
+            return to_entity(orm)
+
+        existing = await self.find_by_email_id(event.email_id)
+        if existing is None:
+            raise RuntimeError(
+                f"payment_events email_id={event.email_id} 충돌 후 조회 실패"
+            )
+        return existing
 
     async def find_by_email_id(self, email_id: int) -> PaymentEvent | None:
         stmt = select(PaymentEventORM).where(PaymentEventORM.email_id == email_id)

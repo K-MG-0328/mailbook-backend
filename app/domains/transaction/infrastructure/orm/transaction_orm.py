@@ -35,7 +35,10 @@ class TransactionORM(Base):
 
     merchant_name: Mapped[str] = mapped_column(String(255), nullable=False)
     canonical_merchant: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # KRW 는 원 단위, USD 는 cents 단위 정수.
     amount: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    # ISO 4217. amount 단위 해석을 위해 명시.
+    currency: Mapped[str] = mapped_column(String(3), nullable=False)
     paid_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
     category: Mapped[str | None] = mapped_column(String(50), nullable=True)
