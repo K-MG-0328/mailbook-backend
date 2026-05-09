@@ -15,6 +15,7 @@ class CandidateEventDto:
     event_type: str  # "merchant_receipt" | "card_notification"
     merchant_name: str
     amount: int
+    currency: str  # ISO 4217. amount 해석 단위 (KRW=원, USD=cents).
     paid_at: datetime
     card_company: str | None
     card_last4: str | None

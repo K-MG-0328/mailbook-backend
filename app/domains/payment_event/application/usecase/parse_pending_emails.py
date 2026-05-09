@@ -116,6 +116,7 @@ class ParsePendingEmails:
             event_type=result.event_type,
             merchant_name=result.merchant_name,
             amount=result.amount,
+            currency=result.currency,
             paid_at=result.paid_at,
             card_company=result.card_company,
             card_last4=result.card_last4,

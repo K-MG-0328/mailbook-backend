@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+from app.domains.payment_event.adapter.outbound.parsers.merchant.anthropic_parser import (
+    AnthropicParser,
+)
 from app.domains.payment_event.adapter.outbound.parsers.merchant.trancy_parser import (
     TrancyParser,
 )
@@ -20,4 +23,4 @@ class StaticParserProvider(ParserProviderPort):
 
 
 # 등록 순서가 곧 매칭 우선순위 (parser_registry.select_parser).
-DEFAULT_PARSERS: list[Parser] = [TrancyParser()]
+DEFAULT_PARSERS: list[Parser] = [TrancyParser(), AnthropicParser()]

@@ -12,6 +12,7 @@ class TransactionResponse(BaseModel):
     merchant_name: str
     canonical_merchant: str | None
     amount: int
+    currency: str
     paid_at: datetime
     category: str | None
     payment_method: str
@@ -30,6 +31,7 @@ class TransactionResponse(BaseModel):
             merchant_name=txn.merchant_name,
             canonical_merchant=txn.canonical_merchant,
             amount=txn.amount,
+            currency=txn.currency,
             paid_at=txn.paid_at,
             category=txn.category,
             payment_method=str(txn.payment_method),

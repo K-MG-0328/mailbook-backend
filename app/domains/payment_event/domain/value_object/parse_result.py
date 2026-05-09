@@ -16,7 +16,8 @@ class ParseResult:
     parser_name: str
     event_type: EventType | None = None
     merchant_name: str = ""
-    amount: int = 0  # 원 단위 정수
+    amount: int = 0  # KRW 는 원 단위, USD 는 cents 단위 정수
+    currency: str = "KRW"  # ISO 4217. KRW 기본, Anthropic 등 USD 영수증은 "USD"
     paid_at: datetime | None = None  # KST timezone-aware
     card_company: str | None = None
     card_last4: str | None = None

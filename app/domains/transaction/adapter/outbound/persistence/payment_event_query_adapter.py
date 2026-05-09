@@ -95,6 +95,7 @@ def _to_dto(orm: PaymentEventORM) -> CandidateEventDto:
         event_type=orm.event_type,
         merchant_name=orm.merchant_name,
         amount=orm.amount,
+        currency=orm.currency,
         paid_at=orm.paid_at,
         card_company=orm.card_company,
         card_last4=orm.card_last4,

@@ -73,6 +73,7 @@ class ResolveSoloTransactions:
             merchant_name=event.merchant_name,
             canonical_merchant=canonical.canonical if canonical else None,
             amount=event.amount,
+            currency=event.currency,
             paid_at=event.paid_at,
             payment_method=payment_method,
             category=self.classifier.pick(alias_category=canonical.category if canonical else None)

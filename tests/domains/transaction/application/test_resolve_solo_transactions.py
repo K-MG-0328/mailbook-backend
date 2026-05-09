@@ -109,12 +109,14 @@ def _event(
     paid_at: datetime,
     merchant: str = "Trancy",
     amount: int = 4800,
+    currency: str = "KRW",
 ) -> CandidateEventDto:
     return CandidateEventDto(
         id=eid,
         event_type=event_type,
         merchant_name=merchant,
         amount=amount,
+        currency=currency,
         paid_at=paid_at,
         card_company=None,
         card_last4=None,
